@@ -35,7 +35,7 @@ def check_guess():
         st.error("유효한 숫자를 입력해주세요.")
 
 # --- 4. 게임 인터페이스 ---
-if not st.session_state.game_over:
+if not st.session_state.game_over:     
     # 텍스트 입력창과 버튼을 만듭니다.
     # key="st_session_input" 으로 입력 위젯의 상태를 세션 스테이트에 저장합니다.
     st.number_input("숫자를 입력하세요:", min_value=1, max_value=100, step=1, key="st_session_input")
