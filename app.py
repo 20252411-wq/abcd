@@ -1,66 +1,55 @@
   python
 import streamlit as st
-import pandas as pd
-import numpy as npmport streamlit as st
+import random
 
-# --- 1. 앱 기본 설정 ---
-st.set_page_config(page_title="BMI 계산기", layout="centered")
-st.title("👨‍⚕️ 스트림릿 BMI 계산기")
+# --- 1. 세션 상태 초기화 ---
+# 게임 상태를 유지하기 위해 streamlit.session_state를 사용합니다.
+if 'secret_number' not in st.session_state:
+    st.session_state.secret_number = random.randint(1, 100) # 1부터 100 사이의 랜덤 숫자 생성
+    st.session_state.attempts = 0 # 시도 횟수 초기화
+    st.session_state.game_over = False # 게임 종료 여부
 
-# --- 2. 입력 받기 (사이드바 활용) ---
-st.sidebar.header("정보를 입력해주세요")
+# --- 2. 앱 제목 및 설명 ---
+st.title("🔢 업앤다운(Up & Down) 게임")
+st.write("1부터 100 사이의 숫자를 맞춰보세요!")
 
-# 사용자로부터 키(cm) 입력 받기
-# min_value, max_value, value는 슬라이더의 최소, 최대, 기본값입니다.
-height = st.sidebar.slider("키 (cm)", min_value=100.0, max_value=250.0, value=170.0, step=0.1)
+# --- 3. 게임 로직 처리 함수 ---
+def check_guess():
+    if st.session_state.game_over:
+        return
 
-# 사용자로부터 몸무게(kg) 입력 받기
-weight = st.sidebar.slider("몸무게 (kg)", min_value=30.0, max_value=200.0, value=70.0, step=0.1)
+    try:
+        # 사용자 입력 가져오기
+        user_guess = int(st.session_input)
 
-# --- 3. BMI 계산 ---
-if st.sidebar.button("계산하기"):
-    # BMI 공식: 체중(kg) / (키(m) * 키(m))
-    # 키 단위를 cm에서 m로 변환
-    height_m = height / 100.0
-    bmi = weight / (height_m ** 2)
+        st.session_state.attempts += 1
 
-    # 결과 소수점 둘째 자리까지 반올림
-    bmi = round(bmi, 2)
+        if user_guess < st.session_state.secret_number:
+            st.warning("⬆️ 업(Up)! 더 큰 숫자를 입력하세요.")
+        elif user_guess > st.session_state.secret_number:
+            st.warning("⬇️ 다운(Down)! 더 작은 숫자를 입력하세요.")
+        else:
+            st.success(f"🎉 정답입니다! {st.session_state.attempts}번 만에 맞히셨어요!")
+            st.session_state.game_over = True
+    except ValueError:
+        st.error("유효한 숫자를 입력해주세요.")
 
-    # --- 4. 결과 출력 및 상태 메시지 ---
-    st.subheader(f"당신의 BMI 지수는 **{bmi}** 입니다.")
+# --- 4. 게임 인터페이스 ---
+if not st.session_state.game_over:
+    # 텍스트 입력창과 버튼을 만듭니다.
+    # key="st_session_input" 으로 입력 위젯의 상태를 세션 스테이트에 저장합니다.
+    st.number_input("숫자를 입력하세요:", min_value=1, max_value=100, step=1, key="st_session_input")
+    
+    # 버튼을 누르면 check_guess 함수가 실행됩니다.
+    st.button("제출", on_click=check_guess)
 
-    # BMI 범위에 따라 다른 색상과 메시지 출력
-    if bmi < 18.5:
-        st.error("저체중입니다. 건강 관리에 유의하세요.") # 빨간색
-    elif 18.5 <= bmi < 24.9:
-        st.success("정상 체중입니다! 아주 좋습니다.") # 초록색
-    elif 25.0 <= bmi < 29.9:
-        st.warning("과체중입니다. 운동을 고려해 보세요.") # 노란색/주황색
-    else:
-        st.error("비만입니다. 전문가와 상담해 보는 것을 권장합니다.") # 빨간색
+else:
+    # 게임이 종료되면 다시 시작 버튼을 보여줍니다.
+    if st.button("다시 시작하기"):
+        st.session_state.secret_number = random.randint(1, 100)
+        st.session_state.attempts = 0
+        st.session_state.game_over = False
+        st.experimental_rerun() # 앱을 새로고침하여 게임을 재시작합니다.
 
-    # 추가 정보 표시
-    st.info("BMI는 참고 지표일 뿐, 정확한 건강 상태는 의사와 상담하세요.")
-
-# --- 1. 앱 제목 설정 ---
-st.title("스트림릿 데이터 시각화 예제")
-st.write("간단한 랜덤 데이터를 표와 그래프로 보여줍니다.")
-
-# --- 2. 데이터 생성 (Pandas 사용) ---
-# 10행 3열의 랜덤 데이터프레임을 만듭니다.
-df = pd.DataFrame(
-    np.random.randn(10, 3), # 랜덤 숫자 생성
-    columns=['컬럼 A', '컬럼 B', '컬럼 C'] # 컬럼 이름 설정
-)
-
-# --- 3. 데이터 표시 (표) ---
-st.subheader("데이터프레임 (표 형식)")
-st.dataframe(df) # st.dataframe() 함수로 데이터프레임을 웹에 표시
-
-# --- 4. 데이터 시각화 (꺾은선 그래프) ---
-st.subheader("꺾은선 그래프")
-st.line_chart(df) # st.line_chart() 함수로 꺾은선 그래프를 웹에 표시
-
-# --- 5. 상호작용 위젯 추가 ---
-st.sidebar.header("설정")
+# --- 5. 현재 시도 횟수 표시 ---
+st.sidebar.info(f"현재 시도 횟수: {st.session_state.attempts}회")
